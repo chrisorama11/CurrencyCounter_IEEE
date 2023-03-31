@@ -1,166 +1,177 @@
-//declare component pin variables 
-const int redLedPin = 9;
-const int greenLedPin = 10;
-const int blueLedPin = 11;
-const int colourS0 = 2;
-const int colourS1 = 3;
-const int colourS2 = 5;
-const int colourS3 = 12;
-const int colourSensorOut = 13;
-const int PIRPin = 1;
+/*
+  blue - $5 
+  red - $50
+  green - $20  
+*/
 
-//declare other code variables
-int redReading = 0;
-int greenReading = 0;
-int blueReading = 0;
-int motionReading = LOW;
+// Define pins
+#define S0 2
+#define S1 3
+#define S2 4
+#define S3 5
+#define sensorOut 6
+#define PIRPin 7
 
-// total balance (global variable) - its value is reassigned in the updateTotalBalance function 
-int totalBalance = 0;
+#define led0 8
+#define led1 9
+#define led2 10
+#define led3 11
 
-void setup() { 
-  Serial.begin(9600); //Baud rate 9600 
-  // pins for RGB LED
-  pinMode(redLedPin, OUTPUT);
-  pinMode(greenLedPin, OUTPUT);
-  pinMode(blueLedPin, OUTPUT);
-  // initialize pins for colour sensor
-  pinMode(colourS0, OUTPUT); 
-  pinMode(colourS1, OUTPUT);
-  pinMode(colourS2, OUTPUT);
-  pinMode(colourS3, OUTPUT);
-  digitalWrite(colourS0,HIGH);
-  digitalWrite(colourS1,LOW);
-  pinMode(colourSensorOut, INPUT);
+
+// Initialize variables
+int redFrequency = 0;
+int greenFrequency = 0;
+int blueFrequency = 0;
+
+//led array and variables
+int ledPin[] = {led0, led1, led2, led3};
+short totalCount=0;
+
+
+void setup() {
+  // Setting the sensor pins
+  pinMode(S0, OUTPUT);
+  pinMode(S1, OUTPUT);
+  pinMode(S2, OUTPUT);
+  pinMode(S3, OUTPUT);
+  pinMode(sensorOut, INPUT);
+
+  // Setting the PIR pins
+  pinMode(PIRPin, INPUT);
+
+  //Setting LED pins
+  pinMode(led0, OUTPUT);
+  pinMode(led1, OUTPUT);
+  pinMode(led2, OUTPUT);
+  pinMode(led3, OUTPUT);
   
-  // initialize pin for motion sensor --DONE
-
-
-//Set direction for colourS0-3 and OUT ------DONE
-
-//Set the output frequency (PWM) through digitalWrite
-
-}
-
-
-void loop()
-
-{
-//read output variables for IR sensor and LEDs (hold frequency for each LED)  
-    redReading = fRed();
-    greenReading = fGreen();
-    blueReading = fBlue();
-
-
-//fetch PIR sensor reading
-    motionReading = readMotion();
-
-    if(motionReading ==1){
-        //display RGB freq using LED 
-        outputLedColour(redReading, greenReading, blueReading);
-    }
-//print frequency of each LED before adding new currency 
-
-//compare colour sensor's output frequency with reference (to deduct amount from balance) 
-  //condition 1 
-    if (){
-        updateTotalBalance(5);
-    } 
-  //condition 2 
-    else if (){
-        updateTotalBalance(10);
-    }
-  //condition 3 
-    else if (){
-        updateTotalBalance(15);
-    }
-  //condition 4 
-    else if (){
-        updateTotalBalance(20);
-    }
-//show wallet balance array of LEDS
-
-    showBalance(totalBalance);
-//delay 1s 
-
-}
-
-//function outputing colour freq of red in currency 
-int fRed()
-{
-//code content 
-  digitalWrite(colourS2,LOW);
-  digitalWrite(colourS3,LOW);
-  int redFreq;
-  redFreq = pulseIn(colourSensorOut, LOW);
-  return redFreq;
-}
-
-//function outputing colour freq of blue in currency 
-int fBlue()
-{
-  digitalWrite(colourS2,LOW);
-  digitalWrite(colourS3,HIGH);
-  int blueFreq;
-  blueFreq = pulseIn(colourSensorOut, LOW);
-  return blueFreq;
-}
-
-//function outputing colour freq of green in currency 
-int fGreen()
-{
-//code content 
-  digitalWrite(colourS2,HIGH);
-  digitalWrite(colourS3,HIGH);
-  int greenFreq;
-  greenFreq = pulseIn(colourSensorOut, LOW);
-  return greenFreq;
+  // Setting frequency scaling to 20%
+  digitalWrite(S0,HIGH);
+  digitalWrite(S1,LOW);
+  
+  // Begins serial communication
+  Serial.begin(9600);
 } 
 
-//function to display colour sensor values on an RBG LED
-void outputLedColour(r, g, b)
-{
-  analogWrite(redLedPin, r);
-  analogWrite(greenLedPin, g);
-  analogWrite(blueLedPin, b);
-} 
+void loop() {
+  // Read the RGB values sensed
+  int R = redFreq();
+  int G = greenFreq();
+  int B = blueFreq();
 
-void readMotion()
+  if(readMotion()&&isRed(R,G,B) == true){
+    Serial.println("It's red.");
+
+    displayBinary(1);
+    delay(5000);
+  }
+  else if(readMotion()&&isBlue(R,G,B) == true){
+    Serial.println("It's blue.");
+
+    displayBinary(2);
+    delay(5000);
+  }
+  else if(readMotion()&&isGreen(R,G,B) == true){
+    Serial.println("It's green.");
+
+    displayBinary(3);
+    delay(5000);
+  }
+
+}  
+
+int redFreq() {
+  // Sensor setting configuration: Red photodiodes ON
+  digitalWrite(S2,LOW);
+  digitalWrite(S3,LOW);
+  redFrequency = pulseIn(sensorOut, LOW);
+
+  delay(100);
+  
+  return redFrequency;
+}
+
+int greenFreq() {
+  // Sensor setting configuration: Green photodiodes ON
+  digitalWrite(S2,HIGH);
+  digitalWrite(S3,HIGH);
+  greenFrequency = pulseIn(sensorOut, LOW);
+
+  delay(100);
+  
+  return greenFrequency;
+}
+
+int blueFreq() {
+  // Sensor setting configuration: Blue photodiodes ON
+  digitalWrite(S2,LOW);
+  digitalWrite(S3,HIGH);
+  blueFrequency = pulseIn(sensorOut, LOW);
+
+  delay(100);
+  
+  return blueFrequency;
+}
+
+bool isRed(int r, int g, int b){
+  if((r<g) && (r<b)){
+    return true;
+  }
+  else{
+    return false;
+  }
+}
+
+bool isGreen(int r, int g, int b){
+  if((g<r) && (g<b)){
+    return true;
+  }
+  else{
+    return false;
+  }
+}
+
+bool isBlue(int r, int g, int b){
+  if((b<r) && (b<g)){
+    return true;
+  }
+  else{
+    return false;
+  }
+}
+
+int readMotion()
 {
   int PIRReading;
-  int PIRState;
   PIRReading = digitalRead(PIRPin);
   if (PIRReading == 1)
   {
-      PIRState = 1;
+      //Serial.println("Motion detected!");
   }
   else
   {
-      PIRState = 0;
+      //Serial.println("Motion finished!");
   }
-  return PIRState;
+  return PIRReading;
 }
 
-void updateTotalBalance(int current)
+void displayBinary(short numToShow)
 {
-    totalBalance += current;
-}
+  totalCount+=numToShow;
+  if(totalCount>15){
+    totalCount=numToShow;
+  }
 
-void showBalance(int balance){
-        int number_of_leds = n;
-
-    // in this array the first element (index 0) is the least significant digit
-    // so the binary number would be backwards
-    int balance_in_binary[n]; // assuming there are n LEDs in the LED array
-    int index = 0;
-
-
-    balance %= math.pow(2,n);     Since there are only n LEDs, the largest binary number you could 
-               // represent with n LEDs would be (2^n)-1
-
-    while (balance){
-        balance_in_binary[index] = balance%2;
-        balance /= 2;
-        index++;
+  for (int i=0;i<4;i++)
+  {
+    if (bitRead(totalCount, i)== 1)
+    {
+      digitalWrite(ledPin[i], HIGH);
     }
+    else
+    {
+      digitalWrite(ledPin[i], LOW);
+    }
+  }
+
 }
