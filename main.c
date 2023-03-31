@@ -85,6 +85,10 @@ int redFreq() {
   digitalWrite(S2,LOW);
   digitalWrite(S3,LOW);
   redFrequency = pulseIn(sensorOut, LOW);
+  //the pulseIn function waits for the sensoorOut pin to turn low
+  // and measures the time it takes to turn high again
+  //a lower pulseIn() value is proportional to a higher
+  // "vividness" of colour
 
   delay(100);
   
